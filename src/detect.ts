@@ -1,7 +1,15 @@
 // ABOUTME: Provider detection and connection utilities for Kasanova wallet
 // ABOUTME: Handles both L1 (KasWare) and L2 (EIP-1193) provider detection
 
-import type { KaswareProvider, KasanovaEthereumProvider } from './types';
+import type { KaswareProvider, KasanovaEthereumProvider, KasanovaNamespace } from './types';
+
+/**
+ * Check if running inside Kasanova's dApp browser.
+ * This is the simplest and most reliable detection method.
+ */
+export function isKasanova(): boolean {
+  return typeof window !== 'undefined' && typeof window.kasanova !== 'undefined';
+}
 
 /**
  * Check if the KasWare-compatible provider (L1) is available.
@@ -21,6 +29,15 @@ export function isKasanovaL2Available(): boolean {
     typeof window.ethereum !== 'undefined' &&
     (window.ethereum as KasanovaEthereumProvider).isKasanova === true
   );
+}
+
+/**
+ * Get the Kasanova namespace if available.
+ * @returns The namespace object or null
+ */
+export function getKasanova(): KasanovaNamespace | null {
+  if (!isKasanova()) return null;
+  return window.kasanova!;
 }
 
 /**

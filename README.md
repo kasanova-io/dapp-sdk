@@ -56,6 +56,18 @@ No build step needed — just check `window.kasware`:
 </script>
 ```
 
+### Detect Kasanova Specifically *(Work in Progress)*
+
+> **Note:** The `window.kasanova` namespace is under active development and not yet available in production builds.
+
+```ts
+// window.kasanova is only set inside Kasanova (not KasWare)
+if (window.kasanova) {
+  console.log('Running inside Kasanova v' + window.kasanova.version);
+  const kasware = window.kasanova.kasware; // same as window.kasware
+}
+```
+
 ## How It Works
 
 When a user opens your dApp inside Kasanova's built-in browser, the app injects JavaScript providers into the page before your code runs:
@@ -347,15 +359,17 @@ Here's the recommended pattern for supporting multiple wallets:
 
 ```ts
 async function connectWallet() {
-  // Option 1: Running inside Kasanova's dApp browser
-  if (window.kasware) {
-    const accounts = await window.kasware.requestAccounts();
+  // Option 1: Running inside Kasanova (WIP — not yet in production)
+  if (window.kasanova) {
+    const accounts = await window.kasanova.kasware.requestAccounts();
     return { provider: 'kasanova', address: accounts[0] };
   }
 
-  // Option 2: KasWare browser extension
-  // (same API — window.kasware is the standard)
-  // Already handled above since the API is identical
+  // Option 2: KasWare-compatible provider (works with both Kasanova and KasWare)
+  if (window.kasware) {
+    const accounts = await window.kasware.requestAccounts();
+    return { provider: 'kasware', address: accounts[0] };
+  }
 
   // Option 3: No wallet found
   throw new Error('No Kaspa wallet detected. Please install Kasanova or KasWare.');

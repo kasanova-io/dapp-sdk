@@ -262,14 +262,37 @@ export interface KasanovaEthereumProvider {
 }
 
 // ============================================================================
+// Kasanova Namespace (window.kasanova)
+// ============================================================================
+
+/**
+ * Kasanova namespace object.
+ *
+ * **Work in Progress** — not yet available in production builds.
+ *
+ * Injected as `window.kasanova` alongside the KasWare-compatible provider.
+ * Provides direct detection and references to all injected providers.
+ */
+export interface KasanovaNamespace {
+  /** Always true — confirms this is Kasanova */
+  readonly isKasanova: true;
+  /** Kasanova bridge version */
+  readonly version: string;
+  /** Reference to the KasWare-compatible L1 provider */
+  readonly kasware: KaswareProvider;
+}
+
+// ============================================================================
 // Global type augmentation
 // ============================================================================
 
 declare global {
   interface Window {
+    /** Kasanova namespace — the simplest way to detect Kasanova */
+    kasanova?: KasanovaNamespace;
     /** KasWare-compatible Kaspa L1 provider (injected by Kasanova) */
     kasware?: KaswareProvider;
-    /** EIP-1193 Ethereum provider for Kasplex L2 (injected by Kasanova) */
+    /** EIP-1193 Ethereum provider for Kasplex L2 (injected by Kasanova, in development) */
     ethereum?: KasanovaEthereumProvider;
   }
 }

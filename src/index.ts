@@ -2,6 +2,7 @@
 // ABOUTME: Re-exports types and detection utilities
 
 export type {
+  KasanovaNamespace,
   KaswareProvider,
   KaspaBalance,
   SendKaspaOptions,
@@ -15,8 +16,10 @@ export type {
 } from './types';
 
 export {
+  isKasanova,
   isKaswareAvailable,
   isKasanovaL2Available,
+  getKasanova,
   getKaswareProvider,
   getKasanovaL2Provider,
   waitForKasware,
