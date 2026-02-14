@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kasanova dApp Example</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      padding: 24px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 20px; margin-bottom: 8px; color: #70c7ba; }
+    .subtitle { color: #888; font-size: 13px; margin-bottom: 24px; }
+    .card {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .card h2 { font-size: 14px; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+    .info-row .label { color: #888; }
+    .info-row .value { color: #e0e0e0; font-family: monospace; font-size: 13px; }
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: opacity 0.15s;
+    }
+    button:active { opacity: 0.7; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #70c7ba; color: #0a0a0a; }
+    .btn-secondary { background: #2a2a2a; color: #e0e0e0; }
+    .btn-danger { background: #c74040; color: #fff; }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #111;
+      color: #e0e0e0;
+      font-size: 14px;
+      margin-bottom: 8px;
+      font-family: monospace;
+    }
+    input::placeholder { color: #555; }
+    #status {
+      text-align: center;
+      padding: 8px;
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 16px;
+    }
+    #status.connected { color: #70c7ba; }
+    #status.error { color: #c74040; }
+    .log {
+      background: #111;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #888;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <h1>Kasanova dApp Example</h1>
+  <p class="subtitle">Minimal integration demo — open this page inside Kasanova</p>
+
+  <div id="status">Detecting wallet...</div>
+
+  <!-- Connect -->
+  <div id="connect-section">
+    <button id="btn-connect" class="btn-primary">Connect Wallet</button>
+  </div>
+
+  <!-- Wallet Info (shown after connect) -->
+  <div id="wallet-section" class="hidden">
+    <div class="card">
+      <h2>Wallet</h2>
+      <div class="info-row">
+        <span class="label">Address</span>
+        <span class="value" id="address">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Network</span>
+        <span class="value" id="network">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Balance</span>
+        <span class="value" id="balance">—</span>
+      </div>
+      <button id="btn-refresh" class="btn-secondary">Refresh Balance</button>
+    </div>
+
+    <!-- Send KAS -->
+    <div class="card">
+      <h2>Send KAS</h2>
+      <input id="send-to" type="text" placeholder="Recipient address (kaspa:qr...)" />
+      <input id="send-amount" type="number" placeholder="Amount in KAS" step="0.01" min="0" />
+      <button id="btn-send" class="btn-primary">Send</button>
+    </div>
+
+    <!-- Sign Message -->
+    <div class="card">
+      <h2>Sign Message</h2>
+      <input id="sign-msg" type="text" placeholder="Message to sign" value="Hello from my dApp!" />
+      <button id="btn-sign" class="btn-primary">Sign (Schnorr)</button>
+      <button id="btn-sign-ecdsa" class="btn-secondary">Sign (ECDSA)</button>
+    </div>
+
+    <!-- Disconnect -->
+    <button id="btn-disconnect" class="btn-danger">Disconnect</button>
+  </div>
+
+  <!-- Log -->
+  <div class="card" style="margin-top: 16px;">
+    <h2>Log</h2>
+    <div id="log" class="log">Waiting for wallet...\n</div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // Kasanova dApp Integration — Vanilla JS Example
+    // =========================================================================
+    //
+    // Kasanova injects `window.kasware` (KasWare-compatible API) into every
+    // page loaded in its dApp browser. This example shows the complete flow:
+    //
+    //   1. Detect the provider
+    //   2. Connect (requestAccounts)
+    //   3. Query balance & network
+    //   4. Send KAS
+    //   5. Sign messages
+    //   6. Listen for events
+    //
+    // If your dApp already works with KasWare, it will work with Kasanova
+    // without any code changes.
+    // =========================================================================
+
+    const $ = (id) => document.getElementById(id);
+    const log = (msg) => {
+      const el = $('log');
+      el.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+      el.scrollTop = el.scrollHeight;
+    };
+
+    let kasware = null;
+
+    // --- Step 1: Detect the provider -------------------------------------------
+
+    function detectProvider() {
+      // Check if already injected
+      if (window.kasware) {
+        onProviderReady();
+        return;
+      }
+
+      // Wait for injection event (Kasanova dispatches this after bridge setup)
+      window.addEventListener('kasware#initialized', onProviderReady, { once: true });
+
+      // Timeout after 3 seconds
+      setTimeout(() => {
+        if (!kasware) {
+          setStatus('Kasanova wallet not detected. Open this page inside Kasanova.', 'error');
+          log('ERROR: window.kasware not found');
+        }
+      }, 3000);
+    }
+
+    function onProviderReady() {
+      kasware = window.kasware;
+      setStatus('Wallet detected — tap Connect', '');
+      log('Provider detected: window.kasware');
+
+      // --- Step 6: Listen for events -----------------------------------------
+      kasware.on('accountsChanged', (accounts) => {
+        log(`Event: accountsChanged → ${JSON.stringify(accounts)}`);
+        if (accounts && accounts.length > 0) {
+          $('address').textContent = shortenAddress(accounts[0]);
+        }
+      });
+
+      kasware.on('networkChanged', (network) => {
+        log(`Event: networkChanged → ${network}`);
+        $('network').textContent = network;
+      });
+
+      kasware.on('disconnect', () => {
+        log('Event: disconnect');
+        showDisconnected();
+      });
+    }
+
+    // --- Step 2: Connect -----------------------------------------------------
+
+    $('btn-connect').addEventListener('click', async () => {
+      if (!kasware) return;
+      try {
+        log('Requesting accounts...');
+        const accounts = await kasware.requestAccounts();
+        log(`Connected: ${accounts[0]}`);
+        await showConnected(accounts[0]);
+      } catch (err) {
+        log(`Connect failed: ${err.message}`);
+        setStatus('Connection rejected', 'error');
+      }
+    });
+
+    // --- Step 3: Query balance & network ------------------------------------
+
+    async function showConnected(address) {
+      $('connect-section').classList.add('hidden');
+      $('wallet-section').classList.remove('hidden');
+      $('address').textContent = shortenAddress(address);
+      setStatus('Connected', 'connected');
+
+      try {
+        const network = await kasware.getNetwork();
+        $('network').textContent = network;
+        log(`Network: ${network}`);
+      } catch (err) {
+        log(`getNetwork error: ${err.message}`);
+      }
+
+      await refreshBalance();
+    }
+
+    async function refreshBalance() {
+      try {
+        const bal = await kasware.getBalance();
+        const kas = (bal.confirmed / 100_000_000).toFixed(4);
+        $('balance').textContent = `${kas} KAS`;
+        log(`Balance: ${kas} KAS (${bal.confirmed} sompi)`);
+      } catch (err) {
+        log(`getBalance error: ${err.message}`);
+      }
+    }
+
+    $('btn-refresh').addEventListener('click', refreshBalance);
+
+    // --- Step 4: Send KAS ----------------------------------------------------
+
+    $('btn-send').addEventListener('click', async () => {
+      const to = $('send-to').value.trim();
+      const amountKas = parseFloat($('send-amount').value);
+
+      if (!to || isNaN(amountKas) || amountKas <= 0) {
+        log('ERROR: Enter a valid address and amount');
+        return;
+      }
+
+      const sompi = Math.round(amountKas * 100_000_000);
+      log(`Sending ${amountKas} KAS (${sompi} sompi) to ${shortenAddress(to)}...`);
+
+      try {
+        const txid = await kasware.sendKaspa(to, sompi);
+        log(`Sent! txid: ${txid}`);
+      } catch (err) {
+        log(`Send failed: ${err.message}`);
+      }
+    });
+
+    // --- Step 5: Sign message ------------------------------------------------
+
+    $('btn-sign').addEventListener('click', () => signMessage('schnorr'));
+    $('btn-sign-ecdsa').addEventListener('click', () => signMessage('ecdsa'));
+
+    async function signMessage(type) {
+      const msg = $('sign-msg').value.trim();
+      if (!msg) {
+        log('ERROR: Enter a message to sign');
+        return;
+      }
+
+      log(`Signing "${msg}" with ${type}...`);
+      try {
+        const signature = await kasware.signMessage(msg, type);
+        log(`Signature (${type}): ${signature}`);
+      } catch (err) {
+        log(`Sign failed: ${err.message}`);
+      }
+    }
+
+    // --- Disconnect ----------------------------------------------------------
+
+    $('btn-disconnect').addEventListener('click', showDisconnected);
+
+    function showDisconnected() {
+      $('connect-section').classList.remove('hidden');
+      $('wallet-section').classList.add('hidden');
+      setStatus('Disconnected — tap Connect', '');
+      log('Disconnected');
+    }
+
+    // --- Helpers --------------------------------------------------------------
+
+    function setStatus(text, cls) {
+      const el = $('status');
+      el.textContent = text;
+      el.className = cls || '';
+    }
+
+    function shortenAddress(addr) {
+      if (!addr || addr.length < 20) return addr;
+      return addr.slice(0, 12) + '...' + addr.slice(-6);
+    }
+
+    // --- Boot -----------------------------------------------------------------
+    detectProvider();
+  </script>
+</body>
+</html>

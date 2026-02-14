@@ -1,0 +1,42 @@
+{
+  "name": "@aspect-build/kasanova-dapp-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for integrating Kasanova as a dApp wallet — KasWare-compatible L1 + EIP-1193 L2",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "kaspa",
+    "kasanova",
+    "kasware",
+    "wallet",
+    "dapp",
+    "web3",
+    "krc20",
+    "kns",
+    "blockchain"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aspect-build/kasanova-dapp-sdk"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  },
+  "peerDependencies": {},
+  "sideEffects": false
+}
