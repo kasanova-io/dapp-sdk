@@ -1,6 +1,6 @@
 {
   "name": "@kasanovaio/dapp-sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "TypeScript SDK for integrating Kasanova as a dApp wallet — KasWare-compatible L1 + EIP-1193 L2",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
