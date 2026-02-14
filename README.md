@@ -485,7 +485,9 @@ Kasanova's dApp browser has a discovery screen with curated dApps. To get your d
 
 1. Make sure your dApp works with `window.kasware` (this guide)
 2. Your site must be served over HTTPS
-3. Contact the Kasanova team to submit your dApp for listing
+3. Contact the Kasanova team to submit your dApp for listing:
+   - [Discord](https://discord.gg/23K5zZ2rbZ)
+   - [Telegram](https://t.me/KasanovaWallet)
 
 Listed dApps appear in the discovery grid with:
 - Icon, name, and description

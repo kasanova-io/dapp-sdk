@@ -28,6 +28,8 @@
     "kns",
     "blockchain"
   ],
+  "author": "Kasanova",
+  "homepage": "https://github.com/kasanova-io/dapp-sdk#readme",
   "license": "MIT",
   "repository": {
     "type": "git",
