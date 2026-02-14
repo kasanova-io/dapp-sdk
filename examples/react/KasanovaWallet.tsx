@@ -21,7 +21,6 @@ interface KaswareProvider {
   getNetwork(): Promise<string>;
   sendKaspa(to: string, sompi: number, opts?: { feeRate?: number }): Promise<string>;
   signMessage(message: string, type?: 'ecdsa' | 'schnorr'): Promise<string>;
-  signPsbt(psbtHex: string, options?: any): Promise<string>;
   getVersion(): Promise<string>;
   on(event: string, handler: (data?: any) => void): void;
   removeListener(event: string, handler: (data?: any) => void): void;

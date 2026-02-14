@@ -147,7 +147,7 @@ Get the current Kaspa network.
 
 ```ts
 const network: string = await window.kasware.getNetwork();
-// "kaspa_mainnet" | "kaspa_testnet" | "kaspa_simnet"
+// "kaspa_mainnet" | "kaspa_testnet"
 ```
 
 | Network String   | Environment |
