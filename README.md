@@ -30,8 +30,8 @@ async function connect() {
 
     const balance = await kasware.getBalance();
     console.log('Balance:', balance.confirmed / 1e8, 'KAS');
-  } catch {
-    console.log('Kasanova wallet not found');
+  } catch (err) {
+    console.error('Wallet connection failed:', err);
   }
 }
 ```
@@ -51,7 +51,9 @@ No build step needed — just check `window.kasware`:
   if (window.kasware) {
     onReady();
   } else {
-    window.addEventListener('kasware#initialized', onReady);
+    // Kasanova fires both events — listen for either
+    window.addEventListener('kasware#initialized', onReady, { once: true });
+    window.addEventListener('kasanova:ready', onReady, { once: true });
   }
 </script>
 ```

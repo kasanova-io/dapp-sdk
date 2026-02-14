@@ -58,12 +58,34 @@ export function getKasanovaL2Provider(): KasanovaEthereumProvider | null {
   return window.ethereum as KasanovaEthereumProvider;
 }
 
+/** Minimal shape check to verify an object looks like a KasWare provider. */
+function hasKaswareShape(obj: unknown): obj is KaswareProvider {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof (obj as KaswareProvider).requestAccounts === 'function' &&
+    typeof (obj as KaswareProvider).getAccounts === 'function' &&
+    typeof (obj as KaswareProvider).on === 'function'
+  );
+}
+
+/** Minimal shape check to verify an object looks like an EIP-1193 provider. */
+function hasEthereumProviderShape(obj: unknown): obj is KasanovaEthereumProvider {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof (obj as KasanovaEthereumProvider).request === 'function' &&
+    typeof (obj as KasanovaEthereumProvider).on === 'function'
+  );
+}
+
 /**
  * Wait for the KasWare provider to become available.
  *
- * Kasanova dispatches `kasware#initialized` when the provider is injected.
- * This function resolves immediately if the provider already exists,
- * otherwise waits for the initialization event.
+ * Kasanova dispatches `kasware#initialized` (and `kasanova:ready`)
+ * when the provider is injected. This function resolves immediately
+ * if the provider already exists, otherwise waits for the
+ * initialization event.
  *
  * @param timeoutMs - Maximum time to wait (default: 3000ms)
  * @returns The provider instance
@@ -75,8 +97,8 @@ export function getKasanovaL2Provider(): KasanovaEthereumProvider | null {
  *   const kasware = await waitForKasware();
  *   const accounts = await kasware.requestAccounts();
  *   console.log('Connected:', accounts[0]);
- * } catch {
- *   console.log('Kasanova wallet not found');
+ * } catch (err) {
+ *   console.error('Wallet connection failed:', err);
  * }
  * ```
  */
@@ -89,8 +111,10 @@ export function waitForKasware(timeoutMs = 3000): Promise<KaswareProvider> {
     }
 
     let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     const cleanup = () => {
+      clearTimeout(timer);
       window.removeEventListener('kasware#initialized', onInit);
       window.removeEventListener('kasanova:ready', onInit);
     };
@@ -99,21 +123,39 @@ export function waitForKasware(timeoutMs = 3000): Promise<KaswareProvider> {
       if (settled) return;
       settled = true;
       cleanup();
-      if (isKaswareAvailable()) {
-        resolve(window.kasware!);
+      const provider = window.kasware;
+      if (provider && hasKaswareShape(provider)) {
+        resolve(provider);
       } else {
-        reject(new Error('Provider initialization event fired but window.kasware is not set'));
+        reject(
+          new Error(
+            'Provider initialization event fired but window.kasware does not implement the expected API. ' +
+              'Ensure Kasanova or KasWare is properly installed.',
+          ),
+        );
       }
     };
 
     window.addEventListener('kasware#initialized', onInit);
     window.addEventListener('kasanova:ready', onInit);
 
-    setTimeout(() => {
+    // Re-check after listener registration to close the race window
+    if (isKaswareAvailable() && hasKaswareShape(window.kasware)) {
+      onInit();
+      return;
+    }
+
+    timer = setTimeout(() => {
       if (settled) return;
       settled = true;
       cleanup();
-      reject(new Error('Kasanova wallet not detected. Is the dApp open inside Kasanova?'));
+      reject(
+        new Error(
+          `Kasanova wallet not detected after ${timeoutMs}ms. ` +
+            `window.kasware is ${typeof window.kasware}. ` +
+            'Is the dApp open inside Kasanova?',
+        ),
+      );
     }, timeoutMs);
   });
 }
@@ -133,8 +175,10 @@ export function waitForKasanovaL2(timeoutMs = 3000): Promise<KasanovaEthereumPro
     }
 
     let settled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     const cleanup = () => {
+      clearTimeout(timer);
       window.removeEventListener('ethereum#initialized', onInit);
       window.removeEventListener('eip6963:announceProvider', onAnnounce as EventListener);
     };
@@ -146,30 +190,67 @@ export function waitForKasanovaL2(timeoutMs = 3000): Promise<KasanovaEthereumPro
       if (isKasanovaL2Available()) {
         resolve(window.ethereum as KasanovaEthereumProvider);
       } else {
-        reject(new Error('Provider initialized but isKasanova flag not set'));
+        reject(
+          new Error(
+            'ethereum#initialized fired but window.ethereum.isKasanova is not true. ' +
+              `window.ethereum is ${typeof window.ethereum}` +
+              (window.ethereum ? `, isKasanova=${(window.ethereum as KasanovaEthereumProvider).isKasanova}` : '') +
+              '. Another wallet extension may have claimed window.ethereum.',
+          ),
+        );
       }
     };
 
     const onAnnounce = (event: CustomEvent) => {
       if (event.detail?.info?.rdns === 'app.kasanova') {
         if (settled) return;
+        const provider = event.detail?.provider;
+        if (!provider || !hasEthereumProviderShape(provider)) {
+          console.warn(
+            '[@kasanovaio/dapp-sdk] eip6963:announceProvider with rdns=app.kasanova ' +
+              'delivered a provider missing required methods (request, on). Ignoring.',
+          );
+          return;
+        }
         settled = true;
         cleanup();
-        resolve(event.detail.provider);
+        resolve(provider as KasanovaEthereumProvider);
       }
     };
 
     window.addEventListener('ethereum#initialized', onInit);
     window.addEventListener('eip6963:announceProvider', onAnnounce as EventListener);
 
-    // Request provider announcements from already-registered wallets
-    try { window.dispatchEvent(new Event('eip6963:requestProvider')); } catch { /* SSR-safe */ }
+    // Re-check after listener registration to close the race window
+    if (isKasanovaL2Available()) {
+      onInit();
+      return;
+    }
 
-    setTimeout(() => {
+    // Request provider announcements from already-registered wallets
+    if (typeof window !== 'undefined' && typeof Event !== 'undefined') {
+      try {
+        window.dispatchEvent(new Event('eip6963:requestProvider'));
+      } catch (err) {
+        console.warn(
+          '[@kasanovaio/dapp-sdk] Failed to dispatch eip6963:requestProvider:',
+          err instanceof Error ? err.message : err,
+        );
+      }
+    }
+
+    timer = setTimeout(() => {
       if (settled) return;
       settled = true;
       cleanup();
-      reject(new Error('Kasanova L2 provider not detected.'));
+      reject(
+        new Error(
+          `Kasanova L2 provider not detected after ${timeoutMs}ms. ` +
+            `window.ethereum is ${typeof window.ethereum}` +
+            (window.ethereum ? `, isKasanova=${(window.ethereum as KasanovaEthereumProvider).isKasanova}` : '') +
+            '.',
+        ),
+      );
     }, timeoutMs);
   });
 }
