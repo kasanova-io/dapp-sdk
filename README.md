@@ -2,7 +2,7 @@
 
 TypeScript types, detection helpers, and examples for integrating **Kasanova** as a wallet provider in your Kaspa dApp.
 
-Kasanova's dApp browser injects a **KasWare-compatible** `window.kasware` provider (L1) and an **EIP-1193 compatible** `window.ethereum` provider (L2). If your dApp already works with KasWare or MetaMask, it works with Kasanova — zero code changes needed.
+Kasanova's dApp browser injects a **KasWare-compatible** `window.kasware` provider (L1) and an **EIP-1193 compatible** `window.ethereum` provider (L2, in development). If your dApp already works with KasWare, it works with Kasanova — zero code changes needed.
 
 This SDK gives you:
 - Full TypeScript types for both provider APIs
@@ -14,13 +14,13 @@ This SDK gives you:
 ### Install
 
 ```bash
-npm install @aspect-build/kasanova-dapp-sdk
+npm install @kasanovaio/dapp-sdk
 ```
 
 ### Detect & Connect (TypeScript)
 
 ```ts
-import { waitForKasware } from '@aspect-build/kasanova-dapp-sdk';
+import { waitForKasware } from '@kasanovaio/dapp-sdk';
 
 async function connect() {
   try {
@@ -67,7 +67,7 @@ When a user opens your dApp inside Kasanova's built-in browser, the app injects 
 │  │         In-App WebView (your dApp)      │  │
 │  │                                         │  │
 │  │   window.kasware  ← L1 KasWare API     │  │
-│  │   window.ethereum ← L2 EIP-1193 API    │  │
+│  │   window.ethereum ← L2 EIP-1193 (dev)  │  │
 │  │                                         │  │
 │  │   Your dApp code calls these providers  │  │
 │  │   ↓                                     │  │
@@ -278,9 +278,11 @@ window.kasware.on('accountsChanged', handler);
 window.kasware.removeListener('accountsChanged', handler);
 ```
 
-## API Reference — L2 (window.ethereum)
+## API Reference — L2 (window.ethereum) *(In Development)*
 
-For Kasplex L2 / EVM-compatible dApps, Kasanova injects an EIP-1193 provider.
+> **Note:** L2 support is in active development and not yet available in production builds.
+
+For Kasplex L2 / EVM-compatible dApps, Kasanova will inject an EIP-1193 provider.
 
 ### Detection
 
