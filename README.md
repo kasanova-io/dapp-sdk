@@ -153,8 +153,7 @@ const network: string = await window.kasware.getNetwork();
 | Network String   | Environment |
 |-----------------|-------------|
 | `kaspa_mainnet` | Mainnet     |
-| `kaspa_testnet` | Testnet 11  |
-| `kaspa_simnet`  | Local dev   |
+| `kaspa_testnet` | Testnet 10  |
 
 #### `switchNetwork(network)` *(not yet implemented)*
 

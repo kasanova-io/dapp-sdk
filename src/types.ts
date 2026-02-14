@@ -46,9 +46,7 @@ export type KaswareEvent =
 /** Network identifiers used by KasWare API */
 export type KaspaNetwork =
   | 'kaspa_mainnet'
-  | 'kaspa_testnet'
-  | 'kaspa_devnet'
-  | 'kaspa_simnet';
+  | 'kaspa_testnet';
 
 /** Signature algorithm for signMessage() */
 export type SignatureType = 'ecdsa' | 'schnorr';
@@ -191,7 +189,7 @@ export interface KaswareProvider {
 /** EIP-1193 JSON-RPC request */
 export interface EthereumRequestArgs {
   method: string;
-  params?: any[];
+  params?: any[] | Record<string, any>;
 }
 
 /** EIP-1193 event names */

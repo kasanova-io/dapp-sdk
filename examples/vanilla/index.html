@@ -174,6 +174,7 @@
 
       // Wait for injection event (Kasanova dispatches this after bridge setup)
       window.addEventListener('kasware#initialized', onProviderReady, { once: true });
+      window.addEventListener('kasanova:ready', onProviderReady, { once: true });
 
       // Timeout after 3 seconds
       setTimeout(() => {
