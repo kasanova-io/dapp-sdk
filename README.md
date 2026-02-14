@@ -156,8 +156,9 @@ const network: string = await window.kasware.getNetwork();
 | `kaspa_testnet` | Testnet 11  |
 | `kaspa_simnet`  | Local dev   |
 
-#### `switchNetwork(network)`
-Request a network switch. Shows approval UI.
+#### `switchNetwork(network)` *(not yet implemented)*
+
+> Will throw an error. Network is determined by the user's Kasanova settings.
 
 ```ts
 await window.kasware.switchNetwork('kaspa_testnet');
@@ -182,8 +183,11 @@ console.log('Transaction:', txid);
 - User sees the full breakdown before confirming
 - Returns the transaction ID on success
 
-#### `signPsbt(psbtHex, options?)`
+#### `signPsbt(psbtHex, options?)` *(not yet implemented)*
+
 Sign a PSKT (Partially Signed Kaspa Transaction). Shows approval UI.
+
+> Will throw an error in the current version.
 
 ```ts
 const signedPsbt: string = await window.kasware.signPsbt(psbtHex, {
@@ -192,8 +196,11 @@ const signedPsbt: string = await window.kasware.signPsbt(psbtHex, {
 });
 ```
 
-#### `signPsbts(psbtHexs, options?)`
+#### `signPsbts(psbtHexs, options?)` *(not yet implemented)*
+
 Sign multiple PSKTs in batch.
+
+> Will throw an error in the current version.
 
 ```ts
 const signed: string[] = await window.kasware.signPsbts(
@@ -202,15 +209,21 @@ const signed: string[] = await window.kasware.signPsbts(
 );
 ```
 
-#### `pushTx(rawTx)`
+#### `pushTx(rawTx)` *(not yet implemented)*
+
 Broadcast a raw transaction.
+
+> Will throw an error in the current version.
 
 ```ts
 const txid: string = await window.kasware.pushTx(rawTransactionHex);
 ```
 
-#### `pushPsbt(psbtHex)`
+#### `pushPsbt(psbtHex)` *(not yet implemented)*
+
 Finalize and broadcast a signed PSKT.
+
+> Will throw an error in the current version.
 
 ```ts
 const txid: string = await window.kasware.pushPsbt(signedPsbtHex);
@@ -276,7 +289,7 @@ window.kasware.on('unlock', () => {
 | Event              | Data       | Description                     |
 |--------------------|------------|---------------------------------|
 | `connect`          | `{}`       | Provider ready                  |
-| `disconnect`       | error      | Connection lost                 |
+| `disconnect`       | —          | Connection lost                 |
 | `accountsChanged`  | `string[]` | Active account changed          |
 | `networkChanged`   | `string`   | Network switched                |
 | `lock`             | —          | Wallet locked (session expired) |
@@ -397,6 +410,75 @@ See [`examples/vanilla/index.html`](./examples/vanilla/index.html) — a self-co
 
 ### React
 See [`examples/react/KasanovaWallet.tsx`](./examples/react/KasanovaWallet.tsx) — a `useKasanova()` hook and example component. Drop it into any React app.
+
+## Opening Your dApp from a Deeplink
+
+Your dApp can include a button or link that opens it directly inside Kasanova's dApp browser. This is how The Lucky Chamber's "Open in Kasanova" button works.
+
+### Deeplink Format
+
+The raw scheme for opening a dApp in Kasanova:
+
+```
+kasanova://open-dapp?url=https://yourdapp.com
+```
+
+Short form:
+```
+ksnv://open-dapp?url=https://yourdapp.com
+```
+
+### Using Airbridge (Recommended)
+
+In production, use Kasanova's Airbridge link (`go.kasanova.app`) instead of the raw scheme. This gives you:
+- **Install fallback** — redirects to App Store / Play Store if Kasanova isn't installed
+- **Deferred deep linking** — the dApp opens automatically after install
+- **Attribution tracking** — know where your users come from
+
+```html
+<!-- Recommended: Airbridge link with deferred deep link -->
+<a href="https://go.kasanova.app?deeplink_url=kasanova%3A%2F%2Fopen-dapp%3Furl%3Dhttps%3A%2F%2Fyourdapp.com">
+  Open in Kasanova
+</a>
+```
+
+With JavaScript:
+
+```js
+function openInKasanova() {
+  const dappUrl = 'https://yourdapp.com';
+  const deeplink = `kasanova://open-dapp?url=${encodeURIComponent(dappUrl)}`;
+  const airbridgeUrl = `https://go.kasanova.app?deeplink_url=${encodeURIComponent(deeplink)}`;
+
+  window.location.href = airbridgeUrl;
+}
+```
+
+> Contact the Kasanova team to get a dedicated Airbridge tracking URL for your dApp (with `sub_id` for attribution).
+
+### Raw Scheme (Development Only)
+
+For local testing, you can use the raw scheme directly:
+
+```js
+// Only for development — no install fallback
+window.location.href = 'kasanova://open-dapp?url=http://localhost:4200';
+```
+
+### How It Works
+
+1. User taps the Airbridge link on their phone
+2. If Kasanova is installed, it opens directly
+3. If not installed, user is sent to App Store / Play Store (then deep link fires after install)
+4. If the wallet is locked, biometric authentication is triggered
+5. Kasanova validates the URL against its backend-configured dApp allowlist
+6. The dApp browser opens at your URL with `window.kasware` injected
+
+### Requirements
+
+- Your dApp URL must be **registered in Kasanova's backend dApp list** for the deeplink to work (security measure — unregistered URLs are silently rejected)
+- URL must use **HTTPS** (except `localhost` for local development)
+- URL matching is by **origin** (scheme + host + port), case-insensitive
 
 ## Getting Listed in Kasanova
 

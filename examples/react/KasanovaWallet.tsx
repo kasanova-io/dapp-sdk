@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 // ---------------------------------------------------------------------------
-// Types (copy from @aspect-build/kasanova-dapp-sdk or define inline)
+// Types (copy from @kasanovaio/dapp-sdk or define inline)
 // ---------------------------------------------------------------------------
 
 interface KaspaBalance {

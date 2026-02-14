@@ -31,10 +31,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aspect-build/kasanova-dapp-sdk"
+    "url": "https://github.com/kasanovaio/dapp-sdk"
   },
   "bugs": {
-    "url": "https://github.com/aspect-build/kasanova-dapp-sdk/issues"
+    "url": "https://github.com/kasanovaio/dapp-sdk/issues"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

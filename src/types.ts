@@ -38,7 +38,6 @@ export interface SignPsbtOptions {
 export type KaswareEvent =
   | 'connect'
   | 'disconnect'
-  | 'close'
   | 'unlock'
   | 'lock'
   | 'accountsChanged'
@@ -95,7 +94,8 @@ export interface KaswareProvider {
   getNetwork(): Promise<KaspaNetwork>;
 
   /**
-   * Request a network switch. Shows approval UI.
+   * Request a network switch.
+   * @remarks Not yet implemented — will throw an error.
    * @param network - Target network identifier
    */
   switchNetwork(network: KaspaNetwork): Promise<KaspaNetwork>;
@@ -113,6 +113,7 @@ export interface KaswareProvider {
 
   /**
    * Sign a PSKT (Partially Signed Kaspa Transaction). Shows approval UI.
+   * @remarks Not yet implemented — will throw an error.
    * @param psbtHex - Hex-encoded PSKT
    * @param options - Signing options
    * @returns Signed PSKT hex
@@ -121,6 +122,7 @@ export interface KaswareProvider {
 
   /**
    * Sign multiple PSKTs. Shows approval UI.
+   * @remarks Not yet implemented — will throw an error.
    * @param psbtHexs - Array of hex-encoded PSKTs
    * @param options - Array of signing options (one per PSKT)
    * @returns Array of signed PSKT hexes
@@ -129,6 +131,7 @@ export interface KaswareProvider {
 
   /**
    * Broadcast a raw transaction to the network.
+   * @remarks Not yet implemented — will throw an error.
    * @param rawTx - Raw transaction hex
    * @returns Transaction ID
    */
@@ -136,6 +139,7 @@ export interface KaswareProvider {
 
   /**
    * Finalize and broadcast a signed PSKT.
+   * @remarks Not yet implemented — will throw an error.
    * @param psbtHex - Signed PSKT hex
    * @returns Transaction ID
    */
@@ -178,18 +182,6 @@ export interface KaswareProvider {
    */
   removeListener(event: KaswareEvent, handler: (data?: any) => void): void;
 
-  // === State Properties (read-only) ===
-
-  /** Currently selected address (null if not connected) */
-  readonly _selectedAddress: string | null;
-  /** Current network */
-  readonly _network: string | null;
-  /** Whether connected to a dApp */
-  readonly _isConnected: boolean;
-  /** Whether the provider has been initialized */
-  readonly _initialized: boolean;
-  /** Whether the wallet is unlocked */
-  readonly _isUnlocked: boolean;
 }
 
 // ============================================================================
