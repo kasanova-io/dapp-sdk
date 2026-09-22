@@ -10,18 +10,12 @@ export type {
   KaswareEvent,
   KaspaNetwork,
   SignatureType,
-  KasanovaEthereumProvider,
-  EthereumRequestArgs,
-  EthereumEvent,
 } from './types';
 
 export {
   isKasanova,
   isKaswareAvailable,
-  isKasanovaL2Available,
   getKasanova,
   getKaswareProvider,
-  getKasanovaL2Provider,
   waitForKasware,
-  waitForKasanovaL2,
 } from './detect';

@@ -2,10 +2,10 @@
 
 TypeScript types, detection helpers, and examples for integrating **Kasanova** as a wallet provider in your Kaspa dApp.
 
-Kasanova's dApp browser injects a **KasWare-compatible** `window.kasware` provider (L1) and an **EIP-1193 compatible** `window.ethereum` provider (L2, in development). If your dApp already works with KasWare, it works with Kasanova — zero code changes needed.
+Kasanova's dApp browser injects a **KasWare-compatible** `window.kasware` provider for Kaspa. If your dApp already works with KasWare, it works with Kasanova — zero code changes needed.
 
 This SDK gives you:
-- Full TypeScript types for both provider APIs
+- Full TypeScript types for the wallet provider API
 - Detection and connection helpers
 - Working examples (vanilla JS + React)
 
@@ -80,8 +80,7 @@ When a user opens your dApp inside Kasanova's built-in browser, the app injects 
 │  ┌─────────────────────────────────────────┐  │
 │  │         In-App WebView (your dApp)      │  │
 │  │                                         │  │
-│  │   window.kasware  ← L1 KasWare API     │  │
-│  │   window.ethereum ← L2 EIP-1193 (dev)  │  │
+│  │   window.kasware  ← KasWare API        │  │
 │  │                                         │  │
 │  │   Your dApp code calls these providers  │  │
 │  │   ↓                                     │  │
@@ -96,7 +95,7 @@ When a user opens your dApp inside Kasanova's built-in browser, the app injects 
 
 **Sensitive operations** (connect, send, sign) show a native approval sheet that the user must confirm. Read-only operations (getBalance, getNetwork) resolve immediately.
 
-## API Reference — L1 (window.kasware)
+## API Reference (window.kasware)
 
 The KasWare-compatible provider for Kaspa L1 operations.
 
@@ -304,69 +303,6 @@ window.kasware.on('accountsChanged', handler);
 window.kasware.removeListener('accountsChanged', handler);
 ```
 
-## API Reference — L2 (window.ethereum) *(In Development)*
-
-> **Note:** L2 support is in active development and not yet available in production builds.
-
-For Kasplex L2 / EVM-compatible dApps, Kasanova will inject an EIP-1193 provider.
-
-### Detection
-
-```ts
-// Check if it's Kasanova specifically (not just any MetaMask-compatible wallet)
-if (window.ethereum?.isKasanova) {
-  console.log('Running inside Kasanova L2 browser');
-}
-```
-
-Kasanova also announces itself via [EIP-6963](https://eips.ethereum.org/EIPS/eip-6963):
-
-```ts
-window.addEventListener('eip6963:announceProvider', (event) => {
-  if (event.detail.info.rdns === 'app.kasanova') {
-    const provider = event.detail.provider;
-    // Use provider...
-  }
-});
-
-// Request announcement
-window.dispatchEvent(new Event('eip6963:requestProvider'));
-```
-
-### Standard EIP-1193 Usage
-
-```ts
-// Connect
-const accounts = await window.ethereum.request({
-  method: 'eth_requestAccounts',
-});
-
-// Get chain ID
-const chainId = await window.ethereum.request({
-  method: 'eth_chainId',
-});
-
-// Send transaction
-const txHash = await window.ethereum.request({
-  method: 'eth_sendTransaction',
-  params: [{
-    to: '0x...',
-    value: '0x...',
-    data: '0x...',
-  }],
-});
-```
-
-### Properties
-
-| Property          | Type      | Description                     |
-|-------------------|-----------|---------------------------------|
-| `isMetaMask`      | `boolean` | Always `true` (compatibility)   |
-| `isKasanova`      | `boolean` | Always `true` (Kasanova-specific) |
-| `chainId`         | `string`  | Current chain ID (hex)          |
-| `selectedAddress` | `string`  | Connected address               |
-| `isConnected`     | `boolean` | Connection status               |
-
 ## Provider Detection Pattern
 
 Here's the recommended pattern for supporting multiple wallets:
@@ -387,20 +323,6 @@ async function connectWallet() {
 
   // Option 3: No wallet found
   throw new Error('No Kaspa wallet detected. Please install Kasanova or KasWare.');
-}
-```
-
-For L2 dApps, distinguish Kasanova from other Ethereum wallets:
-
-```ts
-function getProvider() {
-  if (window.ethereum?.isKasanova) {
-    return { name: 'Kasanova', provider: window.ethereum };
-  }
-  if (window.ethereum?.isMetaMask) {
-    return { name: 'MetaMask', provider: window.ethereum };
-  }
-  return null;
 }
 ```
 
@@ -494,7 +416,6 @@ Kasanova's dApp browser has a discovery screen with curated dApps. To get your d
 Listed dApps appear in the discovery grid with:
 - Icon, name, and description
 - Category badge (games, marketplace, defi, social, etc.)
-- Layer indicator (L1 or L2)
 
 Users can also browse to any URL directly — listing is not required for compatibility.
 
