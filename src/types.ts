@@ -1,5 +1,5 @@
 // ABOUTME: TypeScript type definitions for Kasanova's wallet provider APIs
-// ABOUTME: Covers KasWare-compatible L1 API and EIP-1193 L2 API
+// ABOUTME: Covers the KasWare-compatible Kaspa L1 API
 
 // ============================================================================
 // KasWare-compatible Provider (window.kasware) — Kaspa L1
@@ -183,75 +183,6 @@ export interface KaswareProvider {
 }
 
 // ============================================================================
-// EIP-1193 Provider (window.ethereum) — Kasplex L2
-// ============================================================================
-
-/** EIP-1193 JSON-RPC request */
-export interface EthereumRequestArgs {
-  method: string;
-  params?: any[] | Record<string, any>;
-}
-
-/** EIP-1193 event names */
-export type EthereumEvent =
-  | 'connect'
-  | 'disconnect'
-  | 'chainChanged'
-  | 'accountsChanged'
-  | 'message';
-
-/**
- * EIP-1193 compatible Ethereum provider for Kasplex L2.
- *
- * Kasanova injects this as `window.ethereum` when browsing L2 dApps.
- * Compatible with MetaMask and other EIP-1193 wallets.
- *
- * Identifies itself via:
- * - `isMetaMask: true` (for compatibility)
- * - `isKasanova: true` (for detection)
- */
-export interface KasanovaEthereumProvider {
-  /** EIP-1193 standard request method */
-  request(args: EthereumRequestArgs): Promise<any>;
-
-  /** Legacy MetaMask enable() method */
-  enable(): Promise<string[]>;
-
-  /** Legacy send method (supports both calling conventions) */
-  send(methodOrPayload: string | EthereumRequestArgs, params?: any[]): Promise<any>;
-
-  /** Legacy async send */
-  sendAsync(payload: any, callback: (error: Error | null, result: any) => void): void;
-
-  /** Subscribe to events */
-  on(event: EthereumEvent, handler: (data?: any) => void): this;
-
-  /** Unsubscribe from events */
-  removeListener(event: EthereumEvent, handler: (data?: any) => void): this;
-
-  /** Remove all listeners for an event (or all events) */
-  removeAllListeners(event?: EthereumEvent): this;
-
-  /** True — for MetaMask compatibility */
-  readonly isMetaMask: boolean;
-
-  /** True — identifies Kasanova specifically */
-  readonly isKasanova: boolean;
-
-  /** Current chain ID (hex string, e.g., '0x1') */
-  readonly chainId: string | null;
-
-  /** Currently selected address */
-  readonly selectedAddress: string | null;
-
-  /** Network version (decimal string) */
-  readonly networkVersion: string | null;
-
-  /** Whether the provider is connected */
-  readonly isConnected: boolean;
-}
-
-// ============================================================================
 // Kasanova Namespace (window.kasanova)
 // ============================================================================
 
@@ -282,7 +213,5 @@ declare global {
     kasanova?: KasanovaNamespace;
     /** KasWare-compatible Kaspa L1 provider (injected by Kasanova) */
     kasware?: KaswareProvider;
-    /** EIP-1193 Ethereum provider for Kasplex L2 (injected by Kasanova, in development) */
-    ethereum?: KasanovaEthereumProvider;
   }
 }
