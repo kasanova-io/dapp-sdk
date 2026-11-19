@@ -69,22 +69,13 @@ export interface Kcc20SignRequest {
   };
 }
 
-/** Options for signPsbt() / signPsbts() */
-export interface SignPsbtOptions {
-  /** Kasanova KCOM signing scope. */
-  inputIndexes?: number[];
-  inputIndex?: number;
-  sigHashType?: 1 | 129;
-  /** Whether to auto-finalize after signing */
-  autoFinalized?: boolean;
-  /** Specific input indices to sign */
-  toSignInputs?: Array<{
-    index: number;
-    address?: string;
-    publicKey?: string;
-    sighashTypes?: number[];
-  }>;
-}
+/** KCOM signing scope. Omit both selectors to request all inputs. */
+export type SignPsbtOptions = {
+  sigHashType?: 1 | 2 | 4 | 129 | 130 | 132;
+} & (
+  | { inputIndex?: never; inputIndexes?: number[] }
+  | { inputIndex: number; inputIndexes?: never }
+);
 
 /** Event names emitted by the KasWare provider */
 export type KaswareEvent =
@@ -175,7 +166,7 @@ export interface KaswareProvider {
    * @param options - Shared signing options for the batch in Kasanova
    * @returns Array of signed PSKT hexes
    */
-  signPsbts(psbtHexs: string[], options?: SignPsbtOptions | SignPsbtOptions[]): Promise<string[]>;
+  signPsbts(psbtHexs: string[], options?: SignPsbtOptions): Promise<string[]>;
 
   /**
    * Broadcast a raw transaction to the network.

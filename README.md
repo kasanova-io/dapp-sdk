@@ -218,7 +218,7 @@ console.log('Transaction:', txid);
 
 #### `signPsbt(psbtHex, options?)`
 
-Pass a hex-encoded KCOM JSON PSKT. The wallet shows the requested inputs and outputs and returns signed PSKT hex.
+Pass a hex-encoded KCOM JSON PSKT. Use `inputIndex` or `inputIndexes` to select inputs. Omitting both asks the wallet to sign every input. The wallet rejects unsupported signing options before opening review.
 
 ```ts
 const signed = await window.kasware.signPsbt(psbtHex, {
