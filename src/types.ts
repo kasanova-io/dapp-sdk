@@ -21,8 +21,60 @@ export interface SendKaspaOptions {
   feeRate?: number;
 }
 
+/** A KCC-20 holder state from Trestly's transaction builder. */
+export interface Kcc20State {
+  amount: string | number | bigint;
+  owner: string;
+  ownerScheme: number;
+  borrowScheme: number;
+  borrowGuard: string;
+  extensionCommitment: string;
+}
+
+export interface TrestlyPositionState {
+  tokenCovid: string;
+  shares: string | number | bigint;
+  owner: string;
+}
+
+export interface TrestlyPoolState {
+  tokenCovid: string;
+  admin: string;
+  guardian: string;
+  paused: boolean;
+  kasReserve: string | number | bigint;
+  tokenReserve: string | number | bigint;
+  totalShares: string | number | bigint;
+  protocolKas: string | number | bigint;
+  protocolTokens: string | number | bigint;
+  baseValue: string | number | bigint;
+  maxOutBps: string | number | bigint;
+  windowLen: string | number | bigint;
+  windowCredit: string | number | bigint;
+  windowRef: string | number | bigint;
+  windowOut: string | number | bigint;
+}
+
+type WireState<T> = { [K in keyof T]: bigint extends T[K] ? string : T[K] };
+type IndexedState<T> = { index: number; state: WireState<T> };
+
+export interface Kcc20SignRequest {
+  txJsonString: string;
+  options: {
+    signInputs: Array<{ index: number; sighashType: 1 }>;
+    tokenOutputs: Array<IndexedState<Kcc20State>>;
+    positionInputs?: Array<IndexedState<TrestlyPositionState>>;
+    positionOutputs?: Array<IndexedState<TrestlyPositionState>>;
+    poolOutputs?: Array<IndexedState<TrestlyPoolState>>;
+  };
+}
+
 /** Options for signPsbt() / signPsbts() */
 export interface SignPsbtOptions {
+  /** Kasanova KCOM signing scope. */
+  inputIndexes?: number[];
+  inputIndex?: number;
+  sigHashType?: 1 | 129;
   /** Whether to auto-finalize after signing */
   autoFinalized?: boolean;
   /** Specific input indices to sign */
@@ -111,7 +163,6 @@ export interface KaswareProvider {
 
   /**
    * Sign a PSKT (Partially Signed Kaspa Transaction). Shows approval UI.
-   * @remarks Not yet implemented — will throw an error.
    * @param psbtHex - Hex-encoded PSKT
    * @param options - Signing options
    * @returns Signed PSKT hex
@@ -120,12 +171,11 @@ export interface KaswareProvider {
 
   /**
    * Sign multiple PSKTs. Shows approval UI.
-   * @remarks Not yet implemented — will throw an error.
    * @param psbtHexs - Array of hex-encoded PSKTs
-   * @param options - Array of signing options (one per PSKT)
+   * @param options - Shared signing options for the batch in Kasanova
    * @returns Array of signed PSKT hexes
    */
-  signPsbts(psbtHexs: string[], options?: SignPsbtOptions[]): Promise<string[]>;
+  signPsbts(psbtHexs: string[], options?: SignPsbtOptions | SignPsbtOptions[]): Promise<string[]>;
 
   /**
    * Broadcast a raw transaction to the network.
@@ -189,8 +239,6 @@ export interface KaswareProvider {
 /**
  * Kasanova namespace object.
  *
- * **Work in Progress** — not yet available in production builds.
- *
  * Injected as `window.kasanova` alongside the KasWare-compatible provider.
  * Provides direct detection and references to all injected providers.
  */
@@ -201,6 +249,8 @@ export interface KasanovaNamespace {
   readonly version: string;
   /** Reference to the KasWare-compatible L1 provider */
   readonly kasware: KaswareProvider;
+  /** Present when this wallet supports KCC-20 SafeJSON signing with state proofs. */
+  signPskt?(request: Kcc20SignRequest): Promise<string>;
 }
 
 // ============================================================================

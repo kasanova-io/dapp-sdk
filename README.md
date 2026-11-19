@@ -2,7 +2,7 @@
 
 TypeScript types, detection helpers, and examples for integrating **Kasanova** as a wallet provider in your Kaspa dApp.
 
-Kasanova's dApp browser injects a **KasWare-compatible** `window.kasware` provider for Kaspa. If your dApp already works with KasWare, it works with Kasanova — zero code changes needed.
+Kasanova's dApp browser exposes account and Kaspa L1 methods through `window.kasware`. Trestly KCC-20 transactions use `window.kasanova.signPskt` through the SDK adapter below.
 
 This SDK gives you:
 - Full TypeScript types for the wallet provider API
@@ -58,17 +58,50 @@ No build step needed — just check `window.kasware`:
 </script>
 ```
 
-### Detect Kasanova Specifically *(Work in Progress)*
+### Integrate Trestly kUSDT
 
-> **Note:** The `window.kasanova` namespace is under active development and not yet available in production builds.
+Add **Kasanova** to the wallet picker. Call `connectTrestlyWallet` from the Connect button in Kasanova’s dApp browser. Use the returned address and public key in your builder. Both Trestly networks use the same adapter.
 
 ```ts
-// window.kasanova is only set inside Kasanova (not KasWare)
-if (window.kasanova) {
-  console.log('Running inside Kasanova v' + window.kasanova.version);
-  const kasware = window.kasanova.kasware; // same as window.kasware
+import {
+  getKasanova, waitForKasware, signTrestlyPskt,
+  type TrestlySigningRequest,
+} from '@kasanovaio/dapp-sdk';
+
+export async function connectTrestlyWallet(network: TrestlySigningRequest['network']) {
+  await waitForKasware();
+  const wallet = getKasanova();
+  if (!wallet?.signPskt) throw new Error('Open Trestly in a Kasanova wallet with KCC-20 support.');
+  const [address] = await wallet.kasware.requestAccounts();
+  if (!address) throw new Error('Wallet connection was declined.');
+  const publicKey = await wallet.kasware.getPublicKey();
+
+  return {
+    address, publicKey,
+    sign(
+      txJsonString: string,
+      walletInputIndexes: readonly number[],
+      built: { value: { outputs: TrestlySigningRequest['outputs'] } },
+      positionInputs: TrestlySigningRequest['positionInputs'] = [],
+    ) {
+      return signTrestlyPskt({
+        network, address, txJsonString, signInputs: walletInputIndexes,
+        outputs: built.value.outputs, positionInputs,
+      });
+    },
+  };
 }
 ```
+
+In the external signer, keep the final builder result alongside its transaction ID. If you build with a placeholder key, pass the result **after** replacing the owner and recomputing the scripts and transaction ID. Pass the same SafeJSON string and signing indexes used by Trestly’s existing external signer. Each token, pool and position output needs its builder state. For every LP position spent, also pass its original state and input index as `{index, state}`.
+
+Register Kasanova in the same direct-signature branch as KasWare so covenant inputs reach the witness assembler. Parse the returned SafeJSON and pass each selected input’s `signatureScript` to Trestly’s existing witness assembler. The returned script contains the signature push with SIGHASH_ALL. The assembler inserts it into the appropriate funding or covenant input and submits the finished transaction.
+
+Build against confirmed inputs. If the pool tip is still in the mempool, wait for confirmation, fetch its updated UTXO data, and rebuild before requesting another signature.
+
+Use Trestly's ordered SafeJSON inputs with their full UTXO entries and v1 compute budgets. The wallet checks the live outpoints, token and pool deployment, output states, wallet-owned signing inputs and the redemption payout where applicable. It returns the same transaction with signature scripts on the selected inputs. The site submits through its own Kaspa node. If the user dismisses review, the promise rejects. Raw KCOM PSKT hex uses the separate `signPsbt` method below.
+
+Use [Trestly mainnet](https://trestly.io) with a mainnet wallet and [Trestly testnet](https://testnet.trestly.io) with a TN10 wallet. The DEV catalog also recognizes the requested `https://tn10.trestly.io` origin. Each origin requires its own connection approval. Use `typeof window.kasanova?.signPskt === 'function'` for Kasanova KCC-20 capability detection.
 
 ## How It Works
 
@@ -183,30 +216,25 @@ console.log('Transaction:', txid);
 - User sees the full breakdown before confirming
 - Returns the transaction ID on success
 
-#### `signPsbt(psbtHex, options?)` *(not yet implemented)*
+#### `signPsbt(psbtHex, options?)`
 
-Sign a PSKT (Partially Signed Kaspa Transaction). Shows approval UI.
-
-> Will throw an error in the current version.
+Pass a hex-encoded KCOM JSON PSKT. The wallet shows the requested inputs and outputs and returns signed PSKT hex.
 
 ```ts
-const signedPsbt: string = await window.kasware.signPsbt(psbtHex, {
-  autoFinalized: true,
-  toSignInputs: [{ index: 0 }],
+const signed = await window.kasware.signPsbt(psbtHex, {
+  sigHashType: 1,
+  inputIndexes: [0],
 });
 ```
 
-#### `signPsbts(psbtHexs, options?)` *(not yet implemented)*
+#### `signPsbts(psbtHexs, options?)`
 
-Sign multiple PSKTs in batch.
-
-> Will throw an error in the current version.
+Pass up to 20 KCOM PSKTs and a single set of signing options for the batch.
 
 ```ts
-const signed: string[] = await window.kasware.signPsbts(
-  [psbt1Hex, psbt2Hex],
-  [{ autoFinalized: true }, { autoFinalized: true }],
-);
+const signed = await window.kasware.signPsbts([firstPsbtHex, secondPsbtHex], {
+  sigHashType: 1,
+});
 ```
 
 #### `pushTx(rawTx)` *(not yet implemented)*
@@ -309,7 +337,7 @@ Here's the recommended pattern for supporting multiple wallets:
 
 ```ts
 async function connectWallet() {
-  // Option 1: Running inside Kasanova (WIP — not yet in production)
+  // Option 1: Running inside Kasanova
   if (window.kasanova) {
     const accounts = await window.kasanova.kasware.requestAccounts();
     return { provider: 'kasanova', address: accounts[0] };
@@ -417,7 +445,7 @@ Listed dApps appear in the discovery grid with:
 - Icon, name, and description
 - Category badge (games, marketplace, defi, social, etc.)
 
-Users can also browse to any URL directly — listing is not required for compatibility.
+The wallet enables the provider for origins in its environment-specific dApp catalog.
 
 ## Sompi Conversion Reference
 

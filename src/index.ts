@@ -2,6 +2,10 @@
 // ABOUTME: Re-exports types and detection utilities
 
 export type {
+  Kcc20State,
+  Kcc20SignRequest,
+  TrestlyPoolState,
+  TrestlyPositionState,
   KasanovaNamespace,
   KaswareProvider,
   KaspaBalance,
@@ -19,3 +23,6 @@ export {
   getKaswareProvider,
   waitForKasware,
 } from './detect';
+
+export { signTrestlyPskt } from './trestly';
+export type { TrestlySigningRequest } from './trestly';
