@@ -1,6 +1,6 @@
 {
   "name": "@kasanovaio/dapp-sdk",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "TypeScript SDK for integrating Kasanova as a KasWare-compatible Kaspa wallet",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "test": "npm run build && tsc --noEmit --strict --target ES2020 --moduleResolution node --skipLibCheck test/kcom-options.types.ts && node --test test/*.test.cjs",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
